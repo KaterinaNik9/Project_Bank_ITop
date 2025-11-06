@@ -6,7 +6,8 @@
 using namespace std;
 
 // Структура для хранения данных счета
-struct Account {
+struct Account 
+{
     string cardNumber;
     string pin;
     double balance;
@@ -18,7 +19,8 @@ Account currentAccount;
 bool isLoggedIn = false;
 
 // Функции АТМ
-void initializeATM() {
+void initializeATM() 
+{
     // Инициализация тестового счета
     currentAccount.cardNumber = "1234-5678-9012-3456";
     currentAccount.pin = "1234";
@@ -26,14 +28,16 @@ void initializeATM() {
     currentAccount.ownerName = "Иван Иванов";
 }
 
-void showWelcomeScreen() {
+void showWelcomeScreen() 
+{
     cout << "=================================\n";
     cout << "         ДОБРО ПОЖАЛОВАТЬ       \n";
     cout << "             В БАНКОМАТ         \n";
     cout << "=================================\n";
 }
 
-void showMainMenu() {
+void showMainMenu() 
+{
     cout << "\n======== ОСНОВНОЕ МЕНЮ ========\n";
     cout << "1. Проверить баланс\n";
     cout << "2. Снять наличные\n";
@@ -45,29 +49,37 @@ void showMainMenu() {
     cout << "Выберите операцию: ";
 }
 
-bool authenticateUser() {
+bool authenticateUser() 
+{
     string enteredCard, enteredPin;
-    
     cout << "\n=== АВТОРИЗАЦИЯ ===\n";
     cout << "Введите номер карты: ";
     cin >> enteredCard;
     cout << "Введите PIN-код: ";
     cin >> enteredPin;
     
-    if (enteredCard == currentAccount.cardNumber && enteredPin == currentAccount.pin) {
+    if (enteredCard == currentAccount.cardNumber && enteredPin == currentAccount.pin) 
+    {
         cout << "Авторизация успешна! Добро пожаловать, " << currentAccount.ownerName << "!\n";
         return true;
-    } else {
+    } 
+    else 
+    {
         cout << "Ошибка: Неверный номер карты или PIN-код!\n";
         return false;
-        void checkBalance() {
+    }
+}
+
+void checkBalance() 
+{
     cout << "\n=== БАЛАНС СЧЕТА ===\n";
     cout << "Владелец: " << currentAccount.ownerName << endl;
     cout << "Номер карты: " << currentAccount.cardNumber << endl;
     cout << "Текущий баланс: " << fixed << setprecision(2) << currentAccount.balance << " руб.\n";
 }
 
-void withdrawCash() {
+void withdrawCash() 
+{
     double amount;
     
     cout << "\n=== СНЯТИЕ НАЛИЧНЫХ ===\n";
@@ -76,7 +88,8 @@ void withdrawCash() {
     cin >> amount;
     
     // Проверка ввода
-    if (cin.fail() || amount <= 0) {
+    if (cin.fail() || amount <= 0) 
+    {
         cout << "Ошибка: Неверная сумма!\n";
         cin.clear();
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -84,13 +97,15 @@ void withdrawCash() {
     }
     
     // Проверка доступных сумм
-    if (amount != 100 && amount != 500 && amount != 1000 && amount != 2000 && amount != 5000) {
+    if (amount != 100 && amount != 500 && amount != 1000 && amount != 2000 && amount != 5000) 
+    {
         cout << "Ошибка: Неверная сумма! Выберите из доступных вариантов.\n";
         return;
     }
     
     // Проверка баланса
-    if (amount > currentAccount.balance) {
+    if (amount > currentAccount.balance) 
+    {
         cout << "Ошибка: Недостаточно средств на счете!\n";
         cout << "Запрошено: " << amount << " руб.\n";
         cout << "Доступно: " << currentAccount.balance << " руб.\n";
@@ -112,7 +127,8 @@ void depositCash() {
     cin >> amount;
     
     // Проверка ввода
-    if (cin.fail() || amount <= 0) {
+    if (cin.fail() || amount <= 0) 
+    {
         cout << "Ошибка: Неверная сумма!\n";
         cin.clear();
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -120,7 +136,8 @@ void depositCash() {
     }
     
     // Проверка максимальной суммы
-    if (amount > 50000) {
+    if (amount > 50000) 
+    {
         cout << "Ошибка: Превышена максимальная сумма для внесения (50,000 руб.)!\n";
         return;
     }
@@ -132,7 +149,8 @@ void depositCash() {
     cout << "Текущий баланс: " << currentAccount.balance << " руб.\n";
 }
 
-void transferMoney() {
+void transferMoney() 
+{
     string recipientCard;
     double amount;
     
@@ -143,7 +161,8 @@ void transferMoney() {
     cin >> amount;
     
     // Проверка ввода
-    if (cin.fail() || amount <= 0) {
+    if (cin.fail() || amount <= 0) 
+    {
         cout << "Ошибка: Неверная сумма!\n";
         cin.clear();
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -151,13 +170,15 @@ void transferMoney() {
     }
     
     // Проверка баланса
-    if (amount > currentAccount.balance) {
+    if (amount > currentAccount.balance) 
+    {
         cout << "Ошибка: Недостаточно средств для перевода!\n";
         return;
     }
     
     // Проверка номера карты
-    if (recipientCard.length() != 16 && recipientCard.length() != 19) {
+    if (recipientCard.length() != 16 && recipientCard.length() != 19) 
+    {
         cout << "Ошибка: Неверный формат номера карты!\n";
         return;
     }
@@ -172,17 +193,21 @@ void transferMoney() {
     int confirm;
     cin >> confirm;
     
-    if (confirm == 1) {
+    if (confirm == 1) 
+    {
         currentAccount.balance -= amount;
         cout << "Перевод выполнен успешно!\n";
         cout << "Переведено: " << amount << " руб. на карту " << recipientCard << endl;
         cout << "Остаток на счете: " << currentAccount.balance << " руб.\n";
-    } else {
+    } 
+    else 
+    {
         cout << "Перевод отменен.\n";
     }
 }
 
-void changePIN() {
+void changePIN() 
+{
     string currentPIN, newPIN, confirmPIN;
     
     cout << "\n=== СМЕНА PIN-КОДА ===\n";
@@ -190,7 +215,8 @@ void changePIN() {
     cin >> currentPIN;
     
     // Проверка текущего PIN
-    if (currentPIN != currentAccount.pin) {
+    if (currentPIN != currentAccount.pin) 
+    {
         cout << "Ошибка: Неверный текущий PIN-код!\n";
         return;
     }
@@ -199,14 +225,17 @@ void changePIN() {
     cin >> newPIN;
     
     // Проверка нового PIN
-    if (newPIN.length() != 4) {
+    if (newPIN.length() != 4) 
+    {
         cout << "Ошибка: PIN-код должен состоять из 4 цифр!\n";
         return;
     }
     
     // Проверка, что PIN состоит только из цифр
-    for (char c : newPIN) {
-        if (!isdigit(c)) {
+    for (char c : newPIN) 
+    {
+        if (!isdigit(c)) 
+        {
             cout << "Ошибка: PIN-код должен содержать только цифры!\n";
             return;
         }
@@ -215,15 +244,19 @@ void changePIN() {
     cout << "Подтвердите новый PIN-код: ";
     cin >> confirmPIN;
     
-    if (newPIN == confirmPIN) {
+    if (newPIN == confirmPIN) 
+    {
         currentAccount.pin = newPIN;
         cout << "PIN-код успешно изменен!\n";
-    } else {
+    } 
+    else 
+    {
         cout << "Ошибка: PIN-коды не совпадают!\n";
     }
 }
 
-void showAccountInfo() {
+void showAccountInfo() 
+{
     cout << "\n=== ИНФОРМАЦИЯ О СЧЕТЕ ===\n";
     cout << "Владелец: " << currentAccount.ownerName << endl;
     cout << "Номер карты: " << currentAccount.cardNumber << endl;
@@ -232,8 +265,10 @@ void showAccountInfo() {
     cout << "Дата открытия: 01.01.2023\n";
 }
 
-void processOperation(int choice) {
-    switch (choice) {
+void processOperation(int choice) 
+{
+    switch (choice) 
+    {
         case 1:
             checkBalance();
             break;
@@ -263,17 +298,20 @@ void processOperation(int choice) {
     }
 }
 
-int main() {
+int main() 
+{
     // Установка локализации для русского языка
     setlocale(LC_ALL, "Russian");
     
     initializeATM();
     
-    while (true) {
+    while (true) 
+    {
         showWelcomeScreen();
         
         // Авторизация
-        if (!authenticateUser()) {
+        if (!authenticateUser()) 
+        {
             cout << "Пожалуйста, попробуйте еще раз.\n";
             continue;
         }
@@ -281,14 +319,16 @@ int main() {
         isLoggedIn = true;
         
         // Основной цикл операций
-        while (isLoggedIn) {
+        while (isLoggedIn) 
+        {
             showMainMenu();
             
             int choice;
             cin >> choice;
             
             // Проверка корректности ввода
-            if (cin.fail()) {
+            if (cin.fail()) 
+            {
                 cout << "Ошибка: Введите число от 1 до 7!\n";
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -298,7 +338,8 @@ int main() {
             processOperation(choice);
             
             // Пауза между операциями
-            if (isLoggedIn && choice != 7) {
+            if (isLoggedIn && choice != 7) 
+            {
                 cout << "\nНажмите Enter для продолжения...";
                 cin.ignore();
                 cin.get();
@@ -310,13 +351,15 @@ int main() {
         int continueOperation;
         cin >> continueOperation;
         
-        if (continueOperation != 1) {
+        if (continueOperation != 1) 
+        {
             cout << "До свидания! Хорошего дня!\n";
             break;
         }
     }
     
     return 0;
+};
 }
     }
 }
