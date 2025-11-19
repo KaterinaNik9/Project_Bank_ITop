@@ -1,366 +1,151 @@
 #include <iostream>
-#include <iomanip>
-#include <string>
-#include <limits>
+#include <WinSock2.h>
+#include <WS2tcpip.h>
+#include <stdio.h>
+
+#pragma comment(lib, "Ws2_32.lib")// системная библиотека
 
 using namespace std;
 
-// Структура для хранения данных счета
-struct Account 
+int main()
 {
-    string cardNumber;
-    string pin;
-    double balance;
-    string ownerName;
-};
+    //Key constants
+    const char IP_SERV[] = "127.0.0.1";
+    const int PORT_NUM = 1234;
+    const int BUFF_SIZE = 1024;
 
-// Глобальные переменные (вместо классов)
-Account currentAccount;
-bool isLoggedIn = false;
+    int erStat;
+    // Этап 1: Привязка сокета к паре IP-адрес/Порт
 
-// Функции АТМ
-void initializeATM() 
-{
-    // Инициализация тестового счета
-    currentAccount.cardNumber = "1234-5678-9012-3456";
-    currentAccount.pin = "1234";
-    currentAccount.balance = 10000.0;
-    currentAccount.ownerName = "Иван Иванов";
-}
+    in_addr ip_to_num;// структура с сетевым адресом сокета
+    erStat = inet_pton(AF_INET, IP_SERV, &ip_to_num);// inet_pton() - переводит строку типа char[] в структуру типа in_addr
+	// AF_INET - семейство адресов, строка, содержащая IP-адрес в виде с точкой-разделителем
+	// &ip_to_num - указатель на структуру in_addr, куда будет записан переведенный результат из строчного адреса в численный
+    if (erStat <= 0)
+    {
+        cout << "IP translation error" << endl;
+        return 1;
+    }
+    // Этап 2: Инициализация сокетных интерфейсов Win32API
 
-void showWelcomeScreen() 
-{
-    cout << "=================================\n";
-    cout << "         ДОБРО ПОЖАЛОВАТЬ       \n";
-    cout << "             В БАНКОМАТ         \n";
-    cout << "=================================\n";
-}
+    WSADATA wsData;// создание структуры, в которую загружаются данные о веряии сокета 
+    erStat = WSAStartup(MAKEWORD(2, 2), &wsData);// вызов функции запуска сокетов WSAStartup() 
+	// (WORD запрашивает версию, &wsData указатель на структуру
+	// WORD - тип данных, представляяет собой двухбайтовое слово
 
-void showMainMenu() 
-{
-    cout << "\n======== ОСНОВНОЕ МЕНЮ ========\n";
-    cout << "1. Проверить баланс\n";
-    cout << "2. Снять наличные\n";
-    cout << "3. Внести наличные\n";
-    cout << "4. Перевод средств\n";
-    cout << "5. Сменить PIN-код\n";
-    cout << "6. Информация о счете\n";
-    cout << "7. Выйти\n";
-    cout << "Выберите операцию: ";
-}
+    if (erStat != 0)
+    {
+        cout << "WinSock init error: " << WSAGetLastError() << endl;
+        return 1;
+    }
+    // Этап 3: Создание сокета и его инициализация
 
-bool authenticateUser() 
-{
-    string enteredCard, enteredPin;
-    cout << "\n=== АВТОРИЗАЦИЯ ===\n";
-    cout << "Введите номер карты: ";
-    cin >> enteredCard;
-    cout << "Введите PIN-код: ";
-    cin >> enteredPin;
-    
-    if (enteredCard == currentAccount.cardNumber && enteredPin == currentAccount.pin) 
+    SOCKET ServSock = socket(AF_INET, SOCK_STREAM, 0); // структура данных SOCKET инициализируется с помощью функции
+        // socket (AF_INET - семейство адресов IPv4, SOCK_STREAM - тип сокета, 0 - тип протакола
+    if (ServSock == INVALID_SOCKET)
     {
-        cout << "Авторизация успешна! Добро пожаловать, " << currentAccount.ownerName << "!\n";
-        return true;
-    } 
-    else 
-    {
-        cout << "Ошибка: Неверный номер карты или PIN-код!\n";
-        return false;
+        cout << "Server socket error: " << WSAGetLastError() << endl;
+        WSACleanup();
+        return 1;
     }
-}
 
-void checkBalance() 
-{
-    cout << "\n=== БАЛАНС СЧЕТА ===\n";
-    cout << "Владелец: " << currentAccount.ownerName << endl;
-    cout << "Номер карты: " << currentAccount.cardNumber << endl;
-    cout << "Текущий баланс: " << fixed << setprecision(2) << currentAccount.balance << " руб.\n";
-}
+    sockaddr_in servInfo;// структура содержит ту же информацию, что и sockaddr, но в другом формате
+    ZeroMemory(&servInfo, sizeof(servInfo));
 
-void withdrawCash() 
-{
-    double amount;
-    
-    cout << "\n=== СНЯТИЕ НАЛИЧНЫХ ===\n";
-    cout << "Доступные суммы: 100, 500, 1000, 2000, 5000\n";
-    cout << "Введите сумму для снятия: ";
-    cin >> amount;
-    
-    // Проверка ввода
-    if (cin.fail() || amount <= 0) 
-    {
-        cout << "Ошибка: Неверная сумма!\n";
-        cin.clear();
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        return;
-    }
-    
-    // Проверка доступных сумм
-    if (amount != 100 && amount != 500 && amount != 1000 && amount != 2000 && amount != 5000) 
-    {
-        cout << "Ошибка: Неверная сумма! Выберите из доступных вариантов.\n";
-        return;
-    }
-    
-    // Проверка баланса
-    if (amount > currentAccount.balance) 
-    {
-        cout << "Ошибка: Недостаточно средств на счете!\n";
-        cout << "Запрошено: " << amount << " руб.\n";
-        cout << "Доступно: " << currentAccount.balance << " руб.\n";
-        return;
-    }
-    
-    // Выполнение операции
-    currentAccount.balance -= amount;
-    cout << "Операция успешна!\n";
-    cout << "Снято: " << amount << " руб.\n";
-    cout << "Остаток на счете: " << currentAccount.balance << " руб.\n";
-}
+    servInfo.sin_family = AF_INET;// семейство адресов
+    servInfo.sin_addr = ip_to_num;// вложенная структура хранит сетевой адрес sin_addr
+    servInfo.sin_port = htons(PORT_NUM);// порт htons(номер порта)
 
-void depositCash() {
-    double amount;
-    
-    cout << "\n=== ВНЕСЕНИЕ НАЛИЧНЫХ ===\n";
-    cout << "Введите сумму для внесения: ";
-    cin >> amount;
-    
-    // Проверка ввода
-    if (cin.fail() || amount <= 0) 
+    erStat = bind(ServSock, (sockaddr*)&servInfo, sizeof(servInfo));// назначение внешнего адреса
+	// (ServSock - имя сокета, к которуму привязывается адрес и порт (хранит семейство адресов), (sockaddr*)&servInfo - указатель на структуру
+	// с информацией ою адресе и порте, к которуму привязывается сокет(14 байтная упорядочная информация), sizeof(servInfo) - размер структуры
+    if (erStat != 0)
     {
-        cout << "Ошибка: Неверная сумма!\n";
-        cin.clear();
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        return;
+        cout << "Bind error: " << WSAGetLastError() << endl;
+        closesocket(ServSock);
+        WSACleanup();
+        return 1;
     }
-    
-    // Проверка максимальной суммы
-    if (amount > 50000) 
+    // Этап 4 (для сервера): «Прослушивание» привязанного порта для идентификации подключений
+    erStat = listen(ServSock, SOMAXCONN);// ServSock - "слушащий" сокет, SOMAXCONN - максимальное количество процессов
+	// разрешенных к подключению
+	// для ограничения подключений SOMAXCONN_HINT(N) N- количество подключений (остальные будут сброшены)
+    if (erStat != 0)
     {
-        cout << "Ошибка: Превышена максимальная сумма для внесения (50,000 руб.)!\n";
-        return;
+        cout << "Listen error: " << WSAGetLastError() << endl;// программа не возобнавится до тех пор, пока не будет соединени с Клиентом/ошибка
+        closesocket(ServSock);
+        WSACleanup();
+        return 1;
     }
-    
-    // Выполнение операции
-    currentAccount.balance += amount;
-    cout << "Операция успешна!\n";
-    cout << "Внесено: " << amount << " руб.\n";
-    cout << "Текущий баланс: " << currentAccount.balance << " руб.\n";
-}
+    // Этап 5 (только для Сервера). Подтверждение подключения
 
-void transferMoney() 
-{
-    string recipientCard;
-    double amount;
-    
-    cout << "\n=== ПЕРЕВОД СРЕДСТВ ===\n";
-    cout << "Введите номер карты получателя: ";
-    cin >> recipientCard;
-    cout << "Введите сумму перевода: ";
-    cin >> amount;
-    
-    // Проверка ввода
-    if (cin.fail() || amount <= 0) 
-    {
-        cout << "Ошибка: Неверная сумма!\n";
-        cin.clear();
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        return;
-    }
-    
-    // Проверка баланса
-    if (amount > currentAccount.balance) 
-    {
-        cout << "Ошибка: Недостаточно средств для перевода!\n";
-        return;
-    }
-    
-    // Проверка номера карты
-    if (recipientCard.length() != 16 && recipientCard.length() != 19) 
-    {
-        cout << "Ошибка: Неверный формат номера карты!\n";
-        return;
-    }
-    
-    // Подтверждение операции
-    cout << "\nПодтвердите перевод:\n";
-    cout << "Получатель: Карта " << recipientCard << endl;
-    cout << "Сумма: " << amount << " руб.\n";
-    cout << "Комиссия: 0 руб.\n";
-    cout << "Подтвердить? (1 - Да, 0 - Нет): ";
-    
-    int confirm;
-    cin >> confirm;
-    
-    if (confirm == 1) 
-    {
-        currentAccount.balance -= amount;
-        cout << "Перевод выполнен успешно!\n";
-        cout << "Переведено: " << amount << " руб. на карту " << recipientCard << endl;
-        cout << "Остаток на счете: " << currentAccount.balance << " руб.\n";
-    } 
-    else 
-    {
-        cout << "Перевод отменен.\n";
-    }
-}
+    sockaddr_in clientInfo;
+    ZeroMemory(&clientInfo, sizeof(clientInfo));
+    int clientInfo_size = sizeof(clientInfo);
 
-void changePIN() 
-{
-    string currentPIN, newPIN, confirmPIN;
-    
-    cout << "\n=== СМЕНА PIN-КОДА ===\n";
-    cout << "Введите текущий PIN-код: ";
-    cin >> currentPIN;
-    
-    // Проверка текущего PIN
-    if (currentPIN != currentAccount.pin) 
+    SOCKET ClientConn = accept(ServSock, (sockaddr*)&clientInfo, &clientInfo_size);// ServSock - слушащий
+	// сокет на Сервере, (sockaddr*)&clientInfo - указатель на пустую структуру, &clientInfo_size - указатель на размер структуры
+	// accept() - возвращает номер сокета в ОС
+    if (ClientConn == INVALID_SOCKET)
     {
-        cout << "Ошибка: Неверный текущий PIN-код!\n";
-        return;
+        cout << "Accept error: " << WSAGetLastError() << endl;
+        closesocket(ServSock);
+        WSACleanup();
+        return 1;
     }
-    
-    cout << "Введите новый PIN-код (4 цифры): ";
-    cin >> newPIN;
-    
-    // Проверка нового PIN
-    if (newPIN.length() != 4) 
+
+    char clientIP[INET_ADDRSTRLEN] = { 0 };
+    inet_ntop(AF_INET, &clientInfo.sin_addr, clientIP, INET_ADDRSTRLEN);
+
+    cout << "Client connected: " << clientIP << endl;
+
+    char servBuff[BUFF_SIZE + 1];
+    char clientBuff[BUFF_SIZE + 1];
+
+    int packet_size = 0;
+
+    while (true)
     {
-        cout << "Ошибка: PIN-код должен состоять из 4 цифр!\n";
-        return;
-    }
-    
-    // Проверка, что PIN состоит только из цифр
-    for (char c : newPIN) 
-    {
-        if (!isdigit(c)) 
+        packet_size = recv(ClientConn, servBuff, BUFF_SIZE, 0);// ClientConn - сокет акцептованного соединения
+		// servBuff - буфер приема информации, BUFF_SIZE - размер буфера
+        if (packet_size <= 0)
         {
-            cout << "Ошибка: PIN-код должен содержать только цифры!\n";
-            return;
+            break;
         }
-    }
-    
-    cout << "Подтвердите новый PIN-код: ";
-    cin >> confirmPIN;
-    
-    if (newPIN == confirmPIN) 
-    {
-        currentAccount.pin = newPIN;
-        cout << "PIN-код успешно изменен!\n";
-    } 
-    else 
-    {
-        cout << "Ошибка: PIN-коды не совпадают!\n";
-    }
-}
 
-void showAccountInfo() 
-{
-    cout << "\n=== ИНФОРМАЦИЯ О СЧЕТЕ ===\n";
-    cout << "Владелец: " << currentAccount.ownerName << endl;
-    cout << "Номер карты: " << currentAccount.cardNumber << endl;
-    cout << "Тип счета: Расчетный\n";
-    cout << "Валюта: RUB\n";
-    cout << "Дата открытия: 01.01.2023\n";
-}
+        servBuff[packet_size] = '\0';
+        cout << "Client: " << servBuff << endl;
 
-void processOperation(int choice) 
-{
-    switch (choice) 
-    {
-        case 1:
-            checkBalance();
-            break;
-        case 2:
-            withdrawCash();
-            break;
-        case 3:
-            depositCash();
-            break;
-        case 4:
-            transferMoney();
-            break;
-        case 5:
-            changePIN();
-            break;
-        case 6:
-            showAccountInfo();
-            break;
-        case 7:
-            cout << "\nСпасибо за использование нашего банкомата!\n";
-            cout << "Не забудьте забрать карту!\n";
-            isLoggedIn = false;
-            break;
-        default:
-            cout << "Ошибка: Неверный выбор операции!\n";
-            break;
-    }
-}
-
-int main() 
-{
-    // Установка локализации для русского языка
-    setlocale(LC_ALL, "Russian");
-    
-    initializeATM();
-    
-    while (true) 
-    {
-        showWelcomeScreen();
-        
-        // Авторизация
-        if (!authenticateUser()) 
+        cout << "Host: ";
+        if (!fgets(clientBuff, BUFF_SIZE, stdin))
         {
-            cout << "Пожалуйста, попробуйте еще раз.\n";
-            continue;
+            break;
         }
-        
-        isLoggedIn = true;
-        
-        // Основной цикл операций
-        while (isLoggedIn) 
+        // Check whether server would like to stop chatting 
+        int len = 0;
+        while (clientBuff[len] != '\0' && clientBuff[len] != '\n')
         {
-            showMainMenu();
-            
-            int choice;
-            cin >> choice;
-            
-            // Проверка корректности ввода
-            if (cin.fail()) 
-            {
-                cout << "Ошибка: Введите число от 1 до 7!\n";
-                cin.clear();
-                cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                continue;
-            }
-            
-            processOperation(choice);
-            
-            // Пауза между операциями
-            if (isLoggedIn && choice != 7) 
-            {
-                cout << "\nНажмите Enter для продолжения...";
-                cin.ignore();
-                cin.get();
-            }
+            len++;
         }
-        
-        // Запрос на продолжение работы
-        cout << "\nХотите выполнить еще операции? (1 - Да, 0 - Нет): ";
-        int continueOperation;
-        cin >> continueOperation;
-        
-        if (continueOperation != 1) 
+        clientBuff[len] = '\0';
+
+        if (clientBuff[0] == 'x' && clientBuff[1] == 'x' && clientBuff[2] == 'x')
         {
-            cout << "До свидания! Хорошего дня!\n";
+            break;
+        }
+
+        packet_size = send(ClientConn, clientBuff, len, 0);
+        if (packet_size == SOCKET_ERROR)
+        {
+            cout << "Send error: " << WSAGetLastError() << endl;
             break;
         }
     }
-    
+
+    shutdown(ClientConn, SD_BOTH);
+    closesocket(ClientConn);
+    closesocket(ServSock);
+    WSACleanup();
+
     return 0;
-};
 }
-    }
-}
- 
