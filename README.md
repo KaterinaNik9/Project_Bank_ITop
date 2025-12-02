@@ -1,6 +1,7 @@
 Для работы проекта для начала нужно создать структру файлов в VS
 в Server и в Client выглядят они так:
 <img width="187" height="238" alt="image" src="https://github.com/user-attachments/assets/a78e3947-2cc5-4b40-bcd3-d5e1bf751979" />
+
 дальше, запустите server.cpp, после client.cpp, работать с кодом интуитивно понятно, т.к есть меню.
 
 Техническое задание
